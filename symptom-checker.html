@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Symptom Checker</title>
+  <style>
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #1e1e1e, #0056b3);
+      color: #ffffff;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: #0d0d0d;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+      max-width: 800px;
+      width: 100%;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #0056b3;
+      color: #ffffff;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .navbar a {
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .navbar a:hover {
+      text-decoration: underline;
+    }
+    h1 {
+      color: #007bff;
+      font-size: 2.5em;
+      text-align: center;
+    }
+    .symptoms-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .symptoms-list label {
+      display: block;
+      padding: 10px;
+      background-color: #1e1e1e;
+      border: 1px solid #007bff;
+      border-radius: 5px;
+      font-size: 1em;
+      color: #007bff;
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.3s;
+    }
+    .symptoms-list input[type="checkbox"] {
+      display: none;
+    }
+    .symptoms-list input[type="checkbox"]:checked + label {
+      background-color: #007bff;
+      color: #ffffff;
+      transform: scale(1.1);
+    }
+    .upload-section {
+      margin-top: 20px;
+      text-align: center;
+    }
+    input[type="file"] {
+      display: block;
+      margin: 10px auto;
+      background: #007bff;
+      color: #ffffff;
+      border: none;
+      border-radius: 5px;
+      padding: 10px;
+      cursor: pointer;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .results, .disease-results {
+      margin-top: 20px;
+      background: #1e1e1e;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    .results h3, .disease-results h3 {
+      color: #007bff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="navbar">
+      <a href="symptom-checker.html">🏠 Home</a>
+      <a href="index.html">🔒 Logout</a>
+    </div>
+    <h1>Symptom Checker</h1>
+    <p>Select symptoms you’re experiencing:</p>
+    <div class="symptoms-list">
+      <input type="checkbox" id="fever" onchange="showDiseases()"><label for="fever">Fever</label>
+      <input type="checkbox" id="cough" onchange="showDiseases()"><label for="cough">Cough</label>
+      <input type="checkbox" id="headache" onchange="showDiseases()"><label for="headache">Headache</label>
+      <input type="checkbox" id="fatigue" onchange="showDiseases()"><label for="fatigue">Fatigue</label>
+      <input type="checkbox" id="soreThroat" onchange="showDiseases()"><label for="soreThroat">Sore Throat</label>
+      <input type="checkbox" id="shortnessOfBreath" onchange="showDiseases()"><label for="shortnessOfBreath">Shortness of Breath</label>
+    </div>
+    <div class="disease-results" id="diseaseResults"></div>
+    <div class="upload-section">
+      <h3>Upload Medical Report</h3>
+      <input type="file" id="fileInput" accept=".pdf">
+      <button onclick="uploadFile()">Upload and Summarize</button>
+    </div>
+    <div class="results" id="results"></div>
+  </div>
+  <script>
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const resultsDiv = document.getElementById('results');
+
+      if (!fileInput.files.length) {
+        resultsDiv.innerHTML = "<p>Please upload a PDF file.</p>";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      resultsDiv.innerHTML = "<p>Processing your document...</p>";
+
+      try {
+        const response = await fetch('http://localhost:3000/upload', {
+        method: 'POST',
+        body: formData,
+        });
+
+        if (!response.ok) throw new Error('File upload failed');
+
+        const summary = await response.json();
+        resultsDiv.innerHTML = `<h3>Document Summary:</h3><p>${summary.text}</p>`;
+      } catch (error) {
+        resultsDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+      }
+    }
+
+    function showDiseases() {
+      const diseasesMap = {
+        fever: ['Flu', 'COVID-19', 'Dengue'],
+        cough: ['Cold', 'Bronchitis', 'COVID-19'],
+        headache: ['Migraine', 'Stress', 'Sinus Infection'],
+        fatigue: ['Anemia', 'Diabetes', 'Thyroid Issues'],
+        soreThroat: ['Strep Throat', 'Cold', 'COVID-19'],
+        shortnessOfBreath: ['Asthma', 'Pneumonia', 'Heart Problems'],
+      };
+
+      const selectedSymptoms = Array.from(
+        document.querySelectorAll('.symptoms-list input[type="checkbox"]:checked')
+      ).map((checkbox) => checkbox.id);
+
+      const diseases = new Set();
+      selectedSymptoms.forEach((symptom) => {
+        if (diseasesMap[symptom]) {
+          diseasesMap[symptom].forEach((disease) => diseases.add(disease));
+        }
+      });
+
+      const diseaseResultsDiv = document.getElementById('diseaseResults');
+      if (diseases.size > 0) {
+        diseaseResultsDiv.innerHTML = `<h3>Possible Diseases:</h3><p>${Array.from(diseases).join(', ')}</p>`;
+      } else {
+        diseaseResultsDiv.innerHTML = '';
+      }
+    }
+  </script>
+</body>
+</html>
